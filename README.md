@@ -117,10 +117,13 @@ ai/feature_builder.py for additional features
 visualization/ for new plots
 
 Output
+```
 first_vs_final_mesh_comparison.html
+```
 Interactive side-by-side 3D mesh comparison
-
+```
 first_mesh_error_debug.html
+```
 Detailed error visualization with highlighted elements
 
 Console output:
@@ -132,6 +135,7 @@ Rule violations
 Risk scores
 
 Dependencies
+```
 numpy
 
 pandas
@@ -141,6 +145,7 @@ matplotlib
 plotly
 
 scikit-learn
+```
 
 Contributing
 Fork the repository
@@ -154,5 +159,6 @@ Open a pull request
 License
 This project is licensed under the MIT License.
 See the LICENSE file for details.
+
 
 
