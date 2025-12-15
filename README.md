@@ -1,115 +1,96 @@
-Mesh Project 2.0
+# Mesh Project 2.0
 
-Mesh Project 2.0 is a comprehensive CAE (Computer-Aided Engineering) mesh quality analysis and AI-driven risk assessment tool.
-It analyzes finite element meshes, detects mesh quality issues, and provides hybrid risk scoring using both rule-based logic and machine learning models.
+Mesh Project 2.0 is a CAE (Computer-Aided Engineering) mesh quality analysis and AI-driven risk assessment tool.  
+It analyzes finite element meshes, detects mesh quality issues, and generates hybrid risk scores using rule-based logic and machine learning models.
 
-This project is designed for mesh validation, debugging, and comparison workflows commonly used in automotive, aerospace, and structural CAE pipelines.
+This project is designed for mesh validation, debugging, and comparison workflows in automotive, aerospace, and structural CAE pipelines.
 
-🚀 Features
+---
 
-Mesh Loading
+## Features
 
-Load node and element data from CSV files
+- Load mesh data from CSV files (nodes and elements)
+- Compute geometric quality metrics
+  - Area
+  - Aspect ratio
+  - Edge length ratios
+- Rule-based mesh error detection
+- Hybrid AI risk scoring (rules + ML)
+- Interactive 3D visualization using Plotly
+- Side-by-side mesh comparison and error debugging
+- Modular and scalable architecture
 
-Geometric Quality Metrics
+---
 
-Area
+## Project Structure
 
-Aspect ratio
-
-Edge length ratios
-
-Rule-Based Error Detection
-
-Small or degenerate elements
-
-Poor aspect ratios
-
-Irregular geometry
-
-AI-Based Risk Assessment
-
-Hybrid risk scoring combining:
-
-Rule-based severity
-
-Machine Learning predictions (Random Forest)
-
-Interactive 3D Visualization
-
-Side-by-side mesh comparison
-
-Error highlighting and debugging
-
-Built using Plotly
-
-Modular & Scalable Architecture
-
-Clear separation of mesh handling, quality checks, AI, analysis, and visualization
-
-📁 Project Structure
 Mesh-project-2.0/
-├── main.py                         # Main entry point for the analysis pipeline
-├── core/                           # Core mesh handling
-│   ├── mesh_loader.py              # Load mesh from CSV files
-│   ├── mesh_neighbors.py           # Build element neighbor relationships
-│   └── mesh_objects.py             # Mesh data structures
-├── quality/                        # Mesh quality assessment
-│   ├── metrics.py                  # Geometric quality metrics
-│   └── rules.py                    # Rule-based error detection
-├── ai/                             # AI and risk modeling
-│   ├── feature_builder.py          # Feature engineering
-│   ├── risk_model.py               # Rule-based risk scoring
-│   ├── rf_model.py                 # Random Forest ML model
-│   └── hybrid_risk.py              # Hybrid risk computation
-├── analysis/                       # Analysis utilities
-│   ├── compare_meshes.py            # Mesh comparison logic
-│   └── scorecard.py                # Scorecard and reporting
-├── visualization/                  # 3D visualization utilities
-│   ├── hybrid_comparison_3d.py     # Side-by-side mesh comparison
-│   ├── mesh_error_debug_3d.py      # Error debugging visualization
-│   └── other_plot_utils.py
-├── data/                           # Mesh datasets (git-ignored)
-│   ├── cad/
-│   ├── first_mesh/
-│   └── final_mesh/
-├── requirements.txt                # Python dependencies
+├── main.py # Main entry point
+├── core/ # Core mesh handling
+│ ├── mesh_loader.py # Load mesh from CSV
+│ ├── mesh_neighbors.py # Build element neighbors
+│ └── mesh_objects.py # Mesh data structures
+├── quality/ # Mesh quality analysis
+│ ├── metrics.py # Geometric quality metrics
+│ └── rules.py # Rule-based error detection
+├── ai/ # AI and risk modeling
+│ ├── feature_builder.py # Feature engineering
+│ ├── risk_model.py # Rule-based risk scoring
+│ ├── rf_model.py # Random Forest model
+│ └── hybrid_risk.py # Hybrid risk computation
+├── analysis/ # Analysis utilities
+│ ├── compare_meshes.py # Mesh comparison logic
+│ └── scorecard.py # Reporting and scorecards
+├── visualization/ # 3D visualization
+│ ├── hybrid_comparison_3d.py # Side-by-side comparison
+│ ├── mesh_error_debug_3d.py # Error visualization
+│ └── plot_utils.py
+├── data/ # Mesh datasets (git-ignored)
+│ ├── cad/
+│ ├── first_mesh/
+│ └── final_mesh/
+├── requirements.txt # Python dependencies
 └── README.md
 
-🛠 Installation
-1. Clone the Repository
+yaml
+Copy code
+
+---
+
+## Installation
+
+### Clone the Repository
+
+```bash
 git clone https://github.com/Obsilisk/Mesh-project-2.0.git
 cd Mesh-project-2.0
-
-2. Create and Activate a Virtual Environment
-
+Create a Virtual Environment
 Windows
 
+bash
+Copy code
 python -m venv .venv
 .venv\Scripts\activate
-
-
 Linux / macOS
 
+bash
+Copy code
 python3 -m venv .venv
 source .venv/bin/activate
-
-3. Install Dependencies
+Install Dependencies
+bash
+Copy code
 pip install -r requirements.txt
+Usage
+Run the full analysis pipeline:
 
-▶️ Usage
-
-Run the complete mesh analysis pipeline:
-
+bash
+Copy code
 python main.py
+Pipeline Steps
+Load first and final meshes
 
-This will:
-
-Load and analyze the first mesh
-
-Load and analyze the final mesh
-
-Compute mesh quality metrics
+Compute quality metrics
 
 Detect mesh errors
 
@@ -119,67 +100,58 @@ Generate interactive 3D visualizations
 
 Print high-risk elements in the console
 
-⚙️ Customization
-
-Modify main.py to:
+Customization
+Edit main.py to:
 
 Change mesh input files
 
-Tune quality thresholds
+Adjust quality thresholds
 
-Enable/disable ML-based risk scoring
+Enable or disable ML scoring
 
 Extend:
 
 quality/rules.py for new mesh rules
 
-ai/feature_builder.py for additional ML features
+ai/feature_builder.py for additional features
 
-visualization/ for new plot types
+visualization/ for new plots
 
-📦 Dependencies
-
-numpy – Numerical computations
-
-pandas – Data handling
-
-matplotlib – Static plotting
-
-plotly – Interactive 3D visualization
-
-scikit-learn – Machine learning models
-
-📤 Output
-
-The pipeline generates:
-
+Output
 first_vs_final_mesh_comparison.html
-→ Side-by-side 3D comparison of first and final meshes
+Interactive side-by-side 3D mesh comparison
 
 first_mesh_error_debug.html
-→ Interactive error visualization with highlighted problematic elements
+Detailed error visualization with highlighted elements
 
-Console Output
+Console output:
 
-High-risk element IDs
+High-risk elements
 
 Rule violations
 
-AI risk scores
+Risk scores
 
-🤝 Contributing
+Dependencies
+numpy
 
-Contributions are welcome!
+pandas
 
+matplotlib
+
+plotly
+
+scikit-learn
+
+Contributing
 Fork the repository
 
-Create a new feature branch
+Create a feature branch
 
 Commit your changes
 
 Open a pull request
 
-📄 License
-
+License
 This project is licensed under the MIT License.
-See the LICENSE file for more details.
+See the LICENSE file for details.
