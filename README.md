@@ -67,26 +67,25 @@ cd Mesh-project-2.0
 Create a Virtual Environment
 Windows
 
-bash
-Copy code
+
 python -m venv .venv
 .venv\Scripts\activate
 Linux / macOS
 
-bash
-Copy code
+
 python3 -m venv .venv
 source .venv/bin/activate
 Install Dependencies
-bash
-Copy code
+```
+```
 pip install -r requirements.txt
+```
 Usage
 Run the full analysis pipeline:
 
-bash
-Copy code
+```
 python main.py
+```
 Pipeline Steps
 Load first and final meshes
 
@@ -155,4 +154,5 @@ Open a pull request
 License
 This project is licensed under the MIT License.
 See the LICENSE file for details.
+
 
