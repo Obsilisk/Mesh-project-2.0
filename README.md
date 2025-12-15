@@ -23,7 +23,7 @@ This project is designed for mesh validation, debugging, and comparison workflow
 ---
 
 ## Project Structure
-
+```
 Mesh-project-2.0/
 ├── main.py # Main entry point
 ├── core/ # Core mesh handling
@@ -51,7 +51,7 @@ Mesh-project-2.0/
 │ └── final_mesh/
 ├── requirements.txt # Python dependencies
 └── README.md
-
+```
 yaml
 Copy code
 
@@ -155,3 +155,4 @@ Open a pull request
 License
 This project is licensed under the MIT License.
 See the LICENSE file for details.
+
