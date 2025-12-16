@@ -1,39 +1,51 @@
 from ai.risk_model import risk_category
 
 
-def generate_scorecard(mesh, metrics, errors, risks):
-    total_elements = len(metrics)
-    total_nodes = len(mesh.nodes)
+# =====================================================
+# SCORECARD GENERATOR
+# =====================================================
 
-    avg_aspect = sum(m["aspect_ratio"] for m in metrics.values()) / total_elements
-    max_aspect = max(m["aspect_ratio"] for m in metrics.values())
-
-    small_area_count = sum(1 for m in metrics.values() if m["area"] < 1.0)
-
-    error_summary = {}
-    for errs in errors.values():
-        for e in errs:
-            error_summary[e] = error_summary.get(e, 0) + 1
-
-    risk_summary = {"LOW": 0, "MEDIUM": 0, "HIGH": 0}
-    for score in risks.values():
-        risk_summary[risk_category(score)] += 1
-
-    if risk_summary["HIGH"] > 0:
-        overall_risk = "HIGH"
-    elif risk_summary["MEDIUM"] > 0:
-        overall_risk = "MEDIUM"
-    else:
-        overall_risk = "LOW"
-
-    return {
-        "total_nodes": total_nodes,
-        "total_elements": total_elements,
-        "avg_aspect_ratio": round(avg_aspect, 3),
-        "max_aspect_ratio": round(max_aspect, 3),
-        "small_area_elements": small_area_count,
-        "error_summary": error_summary,
-        "risk_summary": risk_summary,
-        "overall_mesh_risk": overall_risk
+def generate_scorecard(final_report):
+    """
+    final_report format:
+    {
+        element_id: {
+            "severity": "HIGH" | "MEDIUM" | "LOW",
+            "actions": ["DELETE", "ADD", ...],
+            ...
+        }
     }
- 
+    """
+
+    severity_count = {
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0
+    }
+
+    action_count = {
+        "DELETE": 0,
+        "ADD": 0,
+        "MOVE": 0,
+        "REMESH": 0
+    }
+
+    for info in final_report.values():
+        sev = info.get("severity", "LOW")
+        severity_count[sev] += 1
+
+        for action in info.get("actions", []):
+            if action in action_count:
+                action_count[action] += 1
+
+    # Health score logic (simple & explainable)
+    health_score = (
+        100
+        - severity_count["HIGH"] * 5
+        - severity_count["MEDIUM"] * 2
+        - severity_count["LOW"] * 1
+    )
+
+    health_score = max(0, min(100, health_score))
+
+    return severity_count, action_count, health_score

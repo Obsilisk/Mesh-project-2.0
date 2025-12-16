@@ -1,83 +1,119 @@
+# =========================================================
+# MAIN ENTRY POINT – AI MESH QUALITY COPILOT
+# =========================================================
+
 from core.mesh_loader import load_mesh
 from core.mesh_neighbors import build_element_neighbors
-from quality.metrics import compute_quality_metrics
-from quality.rules import detect_mesh_errors
+from quality.intrinsic_metrics import compute_intrinsic_metrics
+from quality.intrinsic_rules import detect_intrinsic_errors
+from cad_analysis.cad_mesh_distance import compute_mesh_to_cad_distances
+from cad_analysis.cad_rules import detect_cad_related_errors
 
-from ai.feature_builder import build_feature_matrix
-from ai.risk_model import compute_risk_scores
-from ai.rf_model import train_rf_model, predict_failure_probability
-from ai.hybrid_risk import compute_hybrid_risk, hybrid_category
+from ml.feature_builder import build_feature_vector
+from ml.severity_predictor import predict_severity
 
-from visualization.hybrid_comparison_3d import plot_side_by_side
-from visualization.mesh_error_debug_3d import plot_mesh_errors_3d
+from analysis.action_mapper import map_actions
+from analysis.scorecard import generate_scorecard
 
+from visualization.mesh_visualizer import visualize_first_mesh_edges
+from ui.dashboard_template import render_dashboard
 
-def analyze_mesh(node_csv, elem_csv):
-    """
-    Runs full mesh analysis pipeline.
-    Returns:
-        mesh object
-        errors (rule-based)
-        hybrid_risks (final AI risk)
-    """
-
-    mesh = load_mesh(node_csv, elem_csv)
-
-    neighbors = build_element_neighbors(mesh)
-
-    metrics = compute_quality_metrics(mesh)
-
-    errors = detect_mesh_errors(metrics, neighbors)
-
-    features = build_feature_matrix(metrics, neighbors, errors)
-
-    rule_risks = compute_risk_scores(features)
-
-    rf_model = train_rf_model(features, errors)
-
-    ml_probs = predict_failure_probability(rf_model, features)
-
-    hybrid_risks = compute_hybrid_risk(rule_risks, ml_probs)
-
-    return mesh, errors, hybrid_risks
 
 
 def main():
-
-    print("\n=== RUNNING FIRST MESH ANALYSIS ===")
-
-    first_mesh, first_errors, first_risks = analyze_mesh(
+    print("[INFO] Loading First Mesh...")
+    mesh = load_mesh(
         "data/first_mesh/first_mesh_2_NODE.csv",
         "data/first_mesh/first_mesh_2_ELEMENT.csv"
     )
 
-    print("\n=== RUNNING FINAL MESH ANALYSIS ===")
-
-    final_mesh, final_errors, final_risks = analyze_mesh(
-        "data/final_mesh/final_mesh_NODE.csv",
-        "data/final_mesh/final_mesh_ELEMENT.csv"
+    print("[INFO] Loading CAD (analysis only)...")
+    cad = load_mesh(
+        "data/cad/cad_NODE.csv",
+        "data/cad/cad_ELEMENT.csv"
     )
 
-    plot_side_by_side(
-        first_mesh,
-        first_risks,
-        final_mesh,
-        final_risks,
-        output_html="first_vs_final_mesh_comparison.html"
+    # -----------------------------------------------------
+    # Intrinsic mesh analysis
+    # -----------------------------------------------------
+    print("[INFO] Computing intrinsic mesh metrics...")
+    mesh.element_neighbors = build_element_neighbors(mesh)
+    metrics = compute_intrinsic_metrics(mesh)
+    intrinsic_errors = detect_intrinsic_errors(
+        mesh, metrics, mesh.element_neighbors
     )
 
-    plot_mesh_errors_3d(
-        first_mesh,
-        first_errors,
-        output_html="first_mesh_error_debug.html"
+    # -----------------------------------------------------
+    # CAD vs first mesh analysis
+    # -----------------------------------------------------
+    print("[INFO] Computing CAD vs mesh deviation...")
+    distances = compute_mesh_to_cad_distances(mesh, cad)
+    cad_errors = detect_cad_related_errors(mesh, distances)
+
+    # -----------------------------------------------------
+    # AI-based severity + action generation
+    # -----------------------------------------------------
+    print("[INFO] Running AI severity prediction...")
+    final_report = {}
+
+    severity_map = {0: "LOW", 1: "MEDIUM", 2: "HIGH"}
+
+    for eid in mesh.elements:
+        features = build_feature_vector(
+            eid,
+            mesh,
+            metrics,
+            intrinsic_errors,
+            cad_errors
+        )
+
+        ml_class, confidence = predict_severity(features)
+        severity = severity_map[ml_class]
+
+        actions = map_actions(
+            intrinsic_errors.get(eid, []),
+            cad_errors.get(eid, [])
+        )
+
+        final_report[eid] = {
+            "severity": severity,
+            "confidence": confidence,
+            "intrinsic_errors": intrinsic_errors.get(eid, []),
+            "cad_errors": cad_errors.get(eid, []),
+            "actions": actions
+        }
+
+        print(
+            f"Element {eid} → "
+            f"Severity: {severity}, "
+            f"Actions: {actions}, "
+            f"Confidence: {confidence}"
+        )
+
+    # -----------------------------------------------------
+    # Visualization (First Mesh only)
+    # -----------------------------------------------------
+    print("[INFO] Generating mesh visualization...")
+    visualize_first_mesh_edges(
+        mesh,
+        final_report,
+        out_html="html/first_mesh_ml_severity.html"
     )
 
-    print("\nFINAL HYBRID HIGH-RISK ELEMENTS (FIRST MESH):")
-    for eid, score in first_risks.items():
-        if hybrid_category(score) == "HIGH":
-            print(f"Element {eid} -> Hybrid Risk Score: {score:.2f}")
+    # -----------------------------------------------------
+    # Scorecard + Recommendations Dashboard
+    # -----------------------------------------------------
+    print("[INFO] Generating recommendations dashboard...")
+    severity_count, action_count, health_score = generate_scorecard(final_report)
 
-    print("\n✅ ALL VISUALIZATIONS GENERATED SUCCESSFULLY")
+    render_dashboard(
+        severity_count,
+        action_count,
+        health_score,
+        output_path="html/recommendations_dashboard.html"
+    )
+
+    print("[DONE] AI Mesh Quality Copilot completed successfully!")
 
 
 if __name__ == "__main__":
