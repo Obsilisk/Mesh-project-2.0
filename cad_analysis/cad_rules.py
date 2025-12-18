@@ -1,18 +1,23 @@
 # =====================================================
 # CAD-BASED ERROR RULES
-# Converts CAD distance metrics into mesh error labels
+# Converts NODE-level CAD distances into ELEMENT errors
 # =====================================================
 
 # -----------------------------
 # Thresholds (tunable)
 # -----------------------------
-MAX_NODE_CAD_DISTANCE = 2.5      # Allowed mesh-to-CAD deviation
-MAX_ELEMENT_CAD_DISTANCE = 3.0   # Average element deviation
+MAX_MEAN_CAD_DISTANCE = 2.5
+MAX_MAX_CAD_DISTANCE = 4.0
+MIN_CAD_COVERAGE = 0.7
 
 
-def detect_cad_related_errors(mesh, mesh_to_cad_distances):
+def get_cad_errors(mesh, node_cad_distances):
     """
-    Detects CAD-related mesh errors.
+    Convert node-level CAD distances into element-level CAD errors.
+
+    Args:
+        mesh: Mesh object
+        node_cad_distances: dict[node_id -> distance]
 
     Returns:
         dict: elem_id -> list of CAD error strings
@@ -21,30 +26,36 @@ def detect_cad_related_errors(mesh, mesh_to_cad_distances):
     cad_errors = {}
 
     for elem_id, elem in mesh.elements.items():
-        node_distances = [
-            mesh_to_cad_distances.get(nid, 0.0)
+        # collect node distances for this element
+        distances = [
+            node_cad_distances.get(nid, 0.0)
             for nid in elem.node_ids
+            if nid in node_cad_distances
         ]
+
+        if not distances:
+            continue
+
+        mean_dist = sum(distances) / len(distances)
+        max_dist = max(distances)
+
+        # coverage = fraction of nodes within tolerance
+        covered = [d for d in distances if d <= MAX_MEAN_CAD_DISTANCE]
+        coverage = len(covered) / len(distances)
 
         elem_errors = []
 
-        if not node_distances:
-            cad_errors[elem_id] = elem_errors
-            continue
-
-        max_node_dist = max(node_distances)
-        avg_node_dist = sum(node_distances) / len(node_distances)
-
-        # -------------------------
-        # CAD deviation checks
-        # -------------------------
-        if max_node_dist > MAX_NODE_CAD_DISTANCE:
+        if mean_dist > MAX_MEAN_CAD_DISTANCE:
             elem_errors.append("CAD_DEVIATION_HIGH")
 
-        if avg_node_dist > MAX_ELEMENT_CAD_DISTANCE:
+        if max_dist > MAX_MAX_CAD_DISTANCE:
+            elem_errors.append("CAD_OUTLIER_NODE")
+
+        if coverage < MIN_CAD_COVERAGE:
             elem_errors.append("CAD_COVERAGE_WEAK")
 
-        cad_errors[elem_id] = elem_errors
+        if elem_errors:
+            cad_errors[elem_id] = elem_errors
 
     print("CAD-related mesh errors detected")
 

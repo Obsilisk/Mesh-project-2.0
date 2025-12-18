@@ -1,87 +1,71 @@
-import csv
-import numpy as np
-
-from analysis.anomaly_explainer import classify_risk
+import pandas as pd
 from analysis.action_mapper import map_actions
 
 
 def generate_recommendations_csv(
     mesh,
     anomaly_scores,
-    intrinsic_metrics,
-    cad_distances,
-    output_path,
-    intrinsic_errors_map=None,
-    cad_errors_map=None
+    intrinsic_errors,
+    cad_errors,
+    out_csv,
+    high_pct=95,
+    med_pct=85
 ):
     """
-    Generates CSV recommendations for a single initial mesh
-    using AI anomaly scores + rule explanations.
+    Generate clean element-level recommendation CSV
+    driven by unsupervised AI severity.
     """
 
-    scores = np.array(list(anomaly_scores.values()))
+    rows = []
 
-    # Percentile-based risk
-    percentiles = {
-        eid: np.percentile(scores, 100 * (scores < score).mean())
-        for eid, score in anomaly_scores.items()
-    }
+    scores = list(anomaly_scores.values())
+    high_thr = percentile(scores, high_pct)
+    med_thr = percentile(scores, med_pct)
 
-    with open(output_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "node_id",
-            "element_id",
-            "anomaly_score",
-            "risk_level",
-            "action_required",
-            "no_of_similar_nodes",
-            "primary_reason",
-            "secondary_reason",
-            "suggested_fix",
-            "confidence"
-        ])
+    for elem_id, elem in mesh.elements.items():
+        score = anomaly_scores.get(elem_id, 0.0)
 
-        for eid, score in anomaly_scores.items():
-            intrinsic = intrinsic_metrics[eid]
-            cad_val = cad_distances.get(eid, 0.0)
+        # -----------------------------
+        # AI-driven severity
+        # -----------------------------
+        if score >= high_thr:
+            risk = "HIGH"
+        elif score >= med_thr:
+            risk = "MEDIUM"
+        else:
+            risk = "LOW"
 
-            intrinsic_errors = (
-                intrinsic_errors_map.get(eid, [])
-                if intrinsic_errors_map else []
-            )
+        intr_errs = intrinsic_errors.get(elem_id, [])
+        cad_errs = cad_errors.get(elem_id, [])
 
-            cad_errors = (
-                cad_errors_map.get(eid, [])
-                if cad_errors_map else []
-            )
+        action = map_actions(
+            intrinsic_errors=intr_errs,
+            cad_errors=cad_errs,
+            anomaly_score=score,
+            risk_level=risk
+        )
 
-            risk = classify_risk(score, percentiles[eid])
+        # Skip non-actionable elements
+        if action["primary_action"] == "NO ACTION":
+            continue
 
-            action_info = map_actions(
-                intrinsic_errors=intrinsic_errors,
-                cad_errors=cad_errors,
-                anomaly_score=score,
-                risk_level=risk
-            )
+        rows.append({
+            "element_id": elem_id,
+            "node_ids": ",".join(map(str, elem.node_ids)),
+            "ai_severity": risk,
+            "primary_action": action["primary_action"],
+            "confidence": action["confidence"]
+        })
 
-            primary_action = action_info["primary_action"]
-            reasons = action_info["reasons"]
-            confidence = action_info["confidence"]
+    df = pd.DataFrame(rows)
+    df.to_csv(out_csv, index=False)
 
-            # Heuristic for "similar nodes"
-            similar_nodes = len(mesh.element_neighbors.get(eid, []))
+    print(f"✅ Clean recommendations CSV saved → {out_csv}")
 
-            for nid in mesh.elements[eid].node_ids:
-                writer.writerow([
-                    nid,
-                    eid,
-                    round(score, 4),
-                    risk,
-                    primary_action,
-                    similar_nodes,
-                    reasons[0] if reasons else "",
-                    reasons[1] if len(reasons) > 1 else "",
-                    primary_action,
-                    confidence
-                ])
+
+def percentile(data, p):
+    if not data:
+        return 0.0
+    data = sorted(data)
+    k = int(len(data) * p / 100)
+    return data[min(k, len(data) - 1)]

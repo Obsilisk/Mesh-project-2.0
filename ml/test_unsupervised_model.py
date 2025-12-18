@@ -19,11 +19,12 @@ SCALER_PATH = "models/feature_scaler.pkl"
 # --------------------------------------------------
 # LOAD MODEL & SCALER
 # --------------------------------------------------
-with open(MODEL_PATH, "rb") as f:
+with open("models/unsupervised_iforest.pkl", "rb") as f:
     model = pickle.load(f)
 
-with open(SCALER_PATH, "rb") as f:
+with open("models/feature_scaler.pkl", "rb") as f:
     scaler = pickle.load(f)
+
 
 
 def main():
@@ -36,8 +37,8 @@ def main():
 
     # Pick ONE first mesh (you can loop later)
     mesh = load_mesh(
-        os.path.join(VEHICLE_TEST, "first_mesh_1_NODE.csv"),
-        os.path.join(VEHICLE_TEST, "first_mesh_1_ELEMENT.csv")
+        os.path.join(VEHICLE_TEST, "first_mesh_2_NODE.csv"),
+        os.path.join(VEHICLE_TEST, "first_mesh_2_ELEMENT.csv")
     )
 
     # Build neighbors
@@ -62,6 +63,7 @@ def main():
 
     X = np.array(X)
     X_scaled = scaler.transform(X)
+    scores = model.decision_function(X_scaled)
 
     # Isolation Forest anomaly score
     # Higher = more anomalous

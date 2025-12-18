@@ -5,17 +5,25 @@ def map_actions(
     risk_level
 ):
     """
-    AI-aware action mapper.
-    Combines rule-based explanations with ML severity.
+    Clean, prescriptive AI-aware action mapper.
+    Produces ONE clear engineering action.
     """
-
-    actions = []
-    reasons = []
 
     all_errors = set(intrinsic_errors) | set(cad_errors)
 
     # -----------------------------
-    # HIGH RISK — AI decides first
+    # CONNECTIVITY ISSUES (HIGHEST PRIORITY)
+    # -----------------------------
+    if "MISSING_NEIGHBOR" in all_errors or "ORPHAN_NODE" in all_errors:
+        return {
+            "primary_action": "REMESH_REGION",
+            "action_scope": "REGION",
+            "reason": "Mesh connectivity broken",
+            "confidence": 0.95
+        }
+
+    # -----------------------------
+    # HIGH RISK (AI DRIVEN)
     # -----------------------------
     if risk_level == "HIGH":
         if (
@@ -23,51 +31,61 @@ def map_actions(
             or "HIGH_SKEWNESS" in all_errors
             or anomaly_score > 0.15
         ):
-            actions.append("DELETE & REMESH")
-            reasons.append("Severely distorted element")
+            return {
+                "primary_action": "MOVE_NODES",
+                "action_scope": "NODE",
+                "reason": "Severely distorted element geometry",
+                "confidence": min(0.95, 0.6 + anomaly_score)
+            }
 
-        elif "CAD_DEVIATION_HIGH" in all_errors:
-            actions.append("MOVE NODES TO CAD")
-            reasons.append("Large CAD deviation")
+        if "CAD_DEVIATION_HIGH" in all_errors:
+            return {
+                "primary_action": "PROJECT_TO_CAD",
+                "action_scope": "NODE",
+                "reason": "Large deviation from CAD surface",
+                "confidence": min(0.9, 0.55 + anomaly_score)
+            }
+
+        return {
+            "primary_action": "LOCAL_REMESH",
+            "action_scope": "ELEMENT",
+            "reason": "Statistically abnormal mesh region",
+            "confidence": min(0.9, 0.55 + anomaly_score)
+        }
 
     # -----------------------------
     # MEDIUM RISK
     # -----------------------------
-    elif risk_level == "MEDIUM":
+    if risk_level == "MEDIUM":
         if "BAD_TRANSITION" in all_errors or "SMALL_AREA" in all_errors:
-            actions.append("REFINE LOCALLY")
-            reasons.append("Poor mesh transition")
+            return {
+                "primary_action": "SMOOTH_MESH",
+                "action_scope": "NODE",
+                "reason": "Poor mesh transition detected",
+                "confidence": min(0.8, 0.5 + anomaly_score)
+            }
 
         if "CAD_DEVIATION_HIGH" in all_errors:
-            actions.append("MOVE NODES TO CAD")
-            reasons.append("CAD mismatch")
+            return {
+                "primary_action": "PROJECT_TO_CAD",
+                "action_scope": "NODE",
+                "reason": "Moderate CAD mismatch",
+                "confidence": min(0.8, 0.5 + anomaly_score)
+            }
+
+        return {
+            "primary_action": "CHECK_GEOMETRY",
+            "action_scope": "ELEMENT",
+            "reason": "Moderate anomaly without explicit rule violation",
+            "confidence": min(0.75, 0.45 + anomaly_score)
+        }
 
     # -----------------------------
-    # LOW RISK
+    # LOW RISK — NO CSV ENTRY
     # -----------------------------
-    else:
-        if all_errors:
-            actions.append("MONITOR")
-            reasons.append("Minor deviations detected")
-        else:
-            actions.append("NO ACTION")
-            reasons.append("Mesh within learned distribution")
-
-    # -----------------------------
-    # Connectivity overrides
-    # -----------------------------
-    if "MISSING_NEIGHBOR" in all_errors or "ORPHAN_NODE" in all_errors:
-        actions = ["ADD CONNECTIVITY"]
-        reasons = ["Mesh connectivity issue detected"]
-
-    # -----------------------------
-    # Confidence heuristic
-    # -----------------------------
-    confidence = min(0.95, 0.55 + anomaly_score)
-
     return {
-        "primary_action": actions[0],
-        "all_actions": actions,
-        "reasons": reasons,
-        "confidence": round(confidence, 2)
+        "primary_action": "NO_ACTION",
+        "action_scope": "NONE",
+        "reason": "Mesh within learned distribution",
+        "confidence": round(0.4 + anomaly_score, 2)
     }
