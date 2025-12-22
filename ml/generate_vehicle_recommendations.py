@@ -10,9 +10,9 @@ from cad_analysis.cad_rules import get_cad_errors
 from analysis.recommendations import generate_recommendations_csv
 
 
-VEHICLE = "raw/08_"
+VEHICLE = "raw/test"
 OUT_DIR = "outputs"
-OUT_FILE = os.path.join(OUT_DIR, "vehicle_08_recommendations.csv")
+OUT_FILE = os.path.join(OUT_DIR, "vehicle_recommendations.csv")
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
     cad_dist = compute_mesh_to_cad_distances(mesh, cad)
     cad_errors = get_cad_errors(mesh, cad_dist)
 
-    with open("models/vehicle_08_anomaly_scores.pkl", "rb") as f:
+    with open("models/vehicle_anomaly_scores.pkl", "rb") as f:
         anomaly_scores = pickle.load(f)
 
     generate_recommendations_csv(

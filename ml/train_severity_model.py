@@ -4,8 +4,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 def main():
-    # Dummy training data (for now)
-    # Later replace with real feature vectors
+
     X = np.array([
         [10, 1.2, 1.1, 3.0, 5.0, 4, 0, 0, 0, 0, 0],
         [2, 4.5, 3.9, 0.5, 3.2, 1, 1, 1, 1, 1, 1],

@@ -15,7 +15,7 @@ from ai.feature_builder import build_feature_vector
 
 
 RAW_ROOT = "raw"
-TRAIN_VEHICLES = ["01_", "02_", "03_", "04_", "05_", "06_", "07_"]
+TRAIN_VEHICLES = ["01_", "02_", "03_", "04_", "05_", "06_", "07_", "08_"]
 
 MODEL_OUT = "models/unsupervised_iforest.pkl"
 SCALER_OUT = "models/feature_scaler.pkl"
@@ -23,9 +23,9 @@ STATS_OUT = "models/feature_stats.json"
 
 
 def collect_training_features():
-    X = []
+    X = []  
 
-    print("🔍 Collecting training data from vehicles 01_ → 07_")
+    print("🔍 Collecting training data from vehicles 01_ → 08_")
 
     for vehicle in TRAIN_VEHICLES:
         vehicle_path = os.path.join(RAW_ROOT, vehicle)
